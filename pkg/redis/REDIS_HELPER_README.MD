@@ -5,7 +5,7 @@
 ## Записать в кеш массив
 ```go
 
-    err := database.NewRedisHelper[models.Location](ctx, repo.redisClient).
+    err := redis.NewHelper[models.Location](ctx, repo.redisClient).
 		SetArray("banner-service:locations", mdls, 1*time.Hour)
     
     if err != nil {
@@ -15,7 +15,7 @@
 
 ## Получить из кеша массив
 ```go
-	result, err := database.NewRedisHelper[models.Location](ctx, repo.redisClient).
+	result, err := redis.Helper[models.Location](ctx, repo.redisClient).
 		GetArray("banner-service:locations")
 
     if err != nil {

@@ -7,7 +7,7 @@
 - 🧩 **Dependency Injection**
   - [Что доступно в DI из коробки](pkg/di/DI_FUNCTIONS_README.MD)
 
-  - [Использование REDIS HELPER](pkg/redishelper/REDIS_HELPER_README.MD)
+  - [Использование REDIS HELPER](pkg/redis/REDIS_HELPER_README.MD)
 ## Возможности
 
 - Корректное закрытие всех подключений
