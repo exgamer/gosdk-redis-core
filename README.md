@@ -5,8 +5,9 @@
 - [Документация GOSDK-CORE](https://github.com/exgamer/gosdk-core)
 
 - 🧩 **Dependency Injection**
-    - [Что доступно в DI из коробки](pkg/di/DI_FUNCTIONS_README.MD)
+  - [Что доступно в DI из коробки](pkg/di/DI_FUNCTIONS_README.MD)
 
+  - [Использование REDIS HELPER](pkg/redishelper/REDIS_HELPER_README.MD)
 ## Возможности
 
 - Корректное закрытие всех подключений
