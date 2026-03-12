@@ -26,8 +26,8 @@ type Helper[E any] struct {
 	context     context.Context
 }
 
-// GetModel Возвращает значение по ключу
-func (h *Helper[E]) GetModel(key string) (*E, error) {
+// GetStruct Возвращает значение по ключу
+func (h *Helper[E]) GetStruct(key string) (*E, error) {
 	start := time.Now()
 	val, err := h.redisClient.Get(h.context, key).Result()
 	execTime := time.Since(start)
@@ -55,8 +55,8 @@ func (h *Helper[E]) GetModel(key string) (*E, error) {
 	return &result, nil
 }
 
-// SetModel Записывает значение по ключу
-func (h *Helper[E]) SetModel(key string, model E, ttl time.Duration) error {
+// SetStruct Записывает значение по ключу
+func (h *Helper[E]) SetStruct(key string, model E, ttl time.Duration) error {
 	jsonModel, err := json.Marshal(model)
 	if err != nil {
 		return fmt.Errorf("failed to marshal model for key %s: %w", key, err)
@@ -170,8 +170,8 @@ func (h *Helper[E]) SetArray(key string, models []E, ttl time.Duration) error {
 	return nil
 }
 
-// MSetModels - сохраняет несколько моделей в Redis
-func (h *Helper[E]) MSetModels(data map[string]E, exp time.Duration) error {
+// MSetStruct - сохраняет несколько структур в Redis
+func (h *Helper[E]) MSetStruct(data map[string]E, exp time.Duration) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -201,8 +201,8 @@ func (h *Helper[E]) MSetModels(data map[string]E, exp time.Duration) error {
 	return nil
 }
 
-// MGetModels - Возвращает несколько моделей по ключам из Redis
-func (h *Helper[E]) MGetModels(keys []string) (map[string]E, error) {
+// MGetStruct - Возвращает несколько структур по ключам из Redis
+func (h *Helper[E]) MGetStruct(keys []string) (map[string]E, error) {
 	if len(keys) == 0 {
 		return map[string]E{}, nil
 	}
