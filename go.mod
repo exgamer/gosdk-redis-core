@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/davecgh/go-spew v1.1.1
-	github.com/exgamer/gosdk-core v1.0.20
+	github.com/exgamer/gosdk-core v1.0.22
 	github.com/redis/go-redis/v9 v9.18.0
 )
 
@@ -23,5 +23,5 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 )
