@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/davecgh/go-spew v1.1.1
-	github.com/exgamer/gosdk-core v1.0.22
+	github.com/exgamer/gosdk-core v1.0.23
 	github.com/redis/go-redis/v9 v9.18.0
 )
 
