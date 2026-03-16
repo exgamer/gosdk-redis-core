@@ -30,6 +30,7 @@ go get github.com/exgamer/gosdk-redis-core
 
 REDIS_HOST=localhost:6379
 REDIS_DB=1
+REDIS_PASSWORD=pass
 
 ## Быстрый старт
 
