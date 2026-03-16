@@ -55,8 +55,9 @@ func (m *RedisKernel) Stop(ctx context.Context) error {
 
 func (m *RedisKernel) initRedisClient() error {
 	m.redisClient = redis.NewClient(&redis.Options{
-		Addr: m.redisConfig.RedisHost,
-		DB:   m.redisConfig.RedisDb,
+		Addr:     m.redisConfig.RedisHost,
+		DB:       m.redisConfig.RedisDb,
+		Password: m.redisConfig.RedisPassword,
 	})
 
 	// Проверка подключения
