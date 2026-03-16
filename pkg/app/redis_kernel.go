@@ -62,7 +62,6 @@ func (m *RedisKernel) initRedisClient() error {
 	m.redisClient = redis.NewClient(&redis.Options{
 		Addr:     m.redisConfig.RedisHost,
 		DB:       m.redisConfig.RedisDb,
-		Username: m.redisConfig.RedisUser,
 		Password: m.redisConfig.RedisPassword,
 	})
 
