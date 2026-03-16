@@ -9,6 +9,7 @@ import (
 	"github.com/exgamer/gosdk-core/pkg/di"
 	"github.com/exgamer/gosdk-redis-core/pkg/config"
 	"github.com/redis/go-redis/v9"
+	"strings"
 )
 
 const RedisKernelName = "redis"
@@ -64,6 +65,12 @@ func (m *RedisKernel) initRedisClient() error {
 		Username: m.redisConfig.RedisUser,
 		Password: m.redisConfig.RedisPassword,
 	})
+
+	fmt.Printf("redis host=%q db=%d pass_len=%d\n",
+		m.redisConfig.RedisHost,
+		m.redisConfig.RedisDb,
+		len(strings.TrimSpace(m.redisConfig.RedisPassword)),
+	)
 
 	// Проверка подключения
 	pong, err := m.redisClient.Ping(context.Background()).Result()
