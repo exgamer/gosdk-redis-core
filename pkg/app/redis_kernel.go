@@ -54,9 +54,14 @@ func (m *RedisKernel) Stop(ctx context.Context) error {
 }
 
 func (m *RedisKernel) initRedisClient() error {
+	if m.redisConfig.RedisUser == "" {
+		m.redisConfig.RedisUser = "default"
+	}
+
 	m.redisClient = redis.NewClient(&redis.Options{
 		Addr:     m.redisConfig.RedisHost,
 		DB:       m.redisConfig.RedisDb,
+		Username: m.redisConfig.RedisUser,
 		Password: m.redisConfig.RedisPassword,
 	})
 
