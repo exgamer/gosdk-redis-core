@@ -58,18 +58,16 @@ func (m *RedisKernel) initRedisClient() error {
 	if m.redisConfig.RedisUser == "" {
 		m.redisConfig.RedisUser = "default"
 	}
-
-	m.redisClient = redis.NewClient(&redis.Options{
-		Addr:     m.redisConfig.RedisHost,
-		DB:       m.redisConfig.RedisDb,
-		Password: m.redisConfig.RedisPassword,
-	})
-
 	fmt.Printf("redis host=%q db=%d pass_len=%d\n",
 		m.redisConfig.RedisHost,
 		m.redisConfig.RedisDb,
 		len(strings.TrimSpace(m.redisConfig.RedisPassword)),
 	)
+	m.redisClient = redis.NewClient(&redis.Options{
+		Addr:     m.redisConfig.RedisHost,
+		DB:       m.redisConfig.RedisDb,
+		Password: m.redisConfig.RedisPassword,
+	})
 
 	// Проверка подключения
 	pong, err := m.redisClient.Ping(context.Background()).Result()
