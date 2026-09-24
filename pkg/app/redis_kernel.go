@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/exgamer/gosdk-core/pkg/app"
 	config2 "github.com/exgamer/gosdk-core/pkg/config"
@@ -54,15 +56,7 @@ func (m *RedisKernel) Stop(ctx context.Context) error {
 }
 
 func (m *RedisKernel) initRedisClient() error {
-	if m.redisConfig.RedisUser == "" {
-		m.redisConfig.RedisUser = "default"
-	}
-
-	m.redisClient = redis.NewClient(&redis.Options{
-		Addr:     m.redisConfig.RedisHost,
-		DB:       m.redisConfig.RedisDb,
-		Password: m.redisConfig.RedisPassword,
-	})
+	m.redisClient = redis.NewClient(NewRedisOptions(m.redisConfig))
 
 	// Проверка подключения
 	pong, err := m.redisClient.Ping(context.Background()).Result()
@@ -76,6 +70,40 @@ func (m *RedisKernel) initRedisClient() error {
 	return nil
 }
 
+// NewRedisOptions собирает redis.Options из конфига. Нулевые значения не
+// передаются, чтобы действовали значения go-redis по умолчанию.
+func NewRedisOptions(cfg *config.RedisConfig) *redis.Options {
+	return &redis.Options{
+		Addr:            cfg.RedisHost,
+		Username:        cfg.RedisUser,
+		Password:        cfg.RedisPassword,
+		DB:              cfg.RedisDb,
+		PoolSize:        cfg.PoolSize,
+		ConnMaxIdleTime: seconds(cfg.IdleTimeout),
+		ConnMaxLifetime: seconds(cfg.MaxConnLifetime),
+		DialTimeout:     milliseconds(cfg.DialTimeoutMs),
+		ReadTimeout:     milliseconds(cfg.ReadTimeoutMs),
+		WriteTimeout:    milliseconds(cfg.WriteTimeoutMs),
+		MaxRetries:      cfg.MaxRetries,
+	}
+}
+
+func seconds(v int) time.Duration {
+	if v <= 0 {
+		return 0
+	}
+
+	return time.Duration(v) * time.Second
+}
+
+func milliseconds(v int) time.Duration {
+	if v <= 0 {
+		return 0
+	}
+
+	return time.Duration(v) * time.Millisecond
+}
+
 // InitRedisConfig Инициализация конфига редиса
 func (m *RedisKernel) initRedisConfig() error {
 	redisConfig := &config.RedisConfig{}
@@ -86,7 +114,8 @@ func (m *RedisKernel) initRedisConfig() error {
 	}
 
 	m.redisConfig = redisConfig
-	spew.Dump(redisConfig)
+	masked := redisConfig.Masked()
+	spew.Dump(&masked)
 
 	return nil
 }
