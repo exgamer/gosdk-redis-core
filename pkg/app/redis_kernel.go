@@ -85,6 +85,8 @@ func NewRedisOptions(cfg *config.RedisConfig) *redis.Options {
 		ReadTimeout:     milliseconds(cfg.ReadTimeoutMs),
 		WriteTimeout:    milliseconds(cfg.WriteTimeoutMs),
 		MaxRetries:      cfg.MaxRetries,
+
+		ContextTimeoutEnabled: cfg.ContextTimeoutEnabled,
 	}
 }
 

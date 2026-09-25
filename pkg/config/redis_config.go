@@ -20,6 +20,11 @@ type RedisConfig struct {
 	ReadTimeoutMs  int `mapstructure:"REDIS_READ_TIMEOUT_MS" json:"redis_read_timeout_ms"`
 	WriteTimeoutMs int `mapstructure:"REDIS_WRITE_TIMEOUT_MS" json:"redis_write_timeout_ms"`
 	MaxRetries     int `mapstructure:"REDIS_MAX_RETRIES" json:"redis_max_retries"`
+
+	// ContextTimeoutEnabled — учитывать дедлайн и отмену context.Context
+	// вызова. По умолчанию выключено: go-redis ждёт ответа до ReadTimeout,
+	// даже если дедлайн контекста уже наступил.
+	ContextTimeoutEnabled bool `mapstructure:"REDIS_CONTEXT_TIMEOUT_ENABLED" json:"redis_context_timeout_enabled"`
 }
 
 // Masked возвращает копию конфига со скрытым паролем — для вывода в лог.

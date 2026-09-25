@@ -35,6 +35,7 @@ go get github.com/exgamer/gosdk-redis-core
 | `REDIS_READ_TIMEOUT_MS` | таймаут чтения ответа, мс. По умолчанию 3000 |
 | `REDIS_WRITE_TIMEOUT_MS` | таймаут записи, мс. По умолчанию равен таймауту чтения |
 | `REDIS_MAX_RETRIES` | число повторов при сетевой ошибке. По умолчанию 3, `-1` — без повторов |
+| `REDIS_CONTEXT_TIMEOUT_ENABLED` | `true` — вызов прерывается по дедлайну/отмене `context.Context`. По умолчанию `false`: go-redis ждёт ответа до `REDIS_READ_TIMEOUT_MS`, даже если дедлайн контекста уже наступил |
 
 Не заданные значения (или `0`) — значения go-redis по умолчанию.
 
@@ -46,6 +47,8 @@ REDIS_READ_TIMEOUT_MS=500
 REDIS_WRITE_TIMEOUT_MS=500
 REDIS_MAX_RETRIES=1
 ```
+
+Если сервис ограничивает вызовы своим `context.WithTimeout`, нужен ещё `REDIS_CONTEXT_TIMEOUT_ENABLED=true`, иначе дедлайн контекста не прерывает ожидание ответа.
 
 При старте конфиг выводится в stdout, пароль скрывается.
 
