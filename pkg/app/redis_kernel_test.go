@@ -116,3 +116,81 @@ func TestReadTimeoutAndRetriesAreApplied(t *testing.T) {
 		t.Errorf("call took %v; with a 200ms read timeout and no retries it must fail fast (defaults would take ~12s)", took)
 	}
 }
+
+func TestInitRedisClient_Optional(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+
+	addr := ln.Addr().String()
+	_ = ln.Close() // свободный порт без Redis — подключение отклоняется сразу
+
+	for _, tc := range []struct {
+		name     string
+		optional bool
+		wantErr  bool
+	}{
+		{name: "по умолчанию — ошибка Init", optional: false, wantErr: true},
+		{name: "REDIS_OPTIONAL=true — без ошибки, клиент создан", optional: true, wantErr: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := &RedisKernel{redisConfig: &config.RedisConfig{
+				RedisHost: addr, DialTimeoutMs: 200, MaxRetries: -1, Optional: tc.optional,
+			}}
+
+			err := m.initRedisClient()
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("initRedisClient error = %v, wantErr %v", err, tc.wantErr)
+			}
+
+			if m.redisClient == nil {
+				t.Fatal("client must be created")
+			}
+
+			_ = m.redisClient.Close()
+		})
+	}
+}
+
+func TestInitRedisClient_OptionalKeepsConfigErrorsFatal(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer ln.Close()
+
+	// поддельный Redis: на любую команду (HELLO/AUTH) — WRONGPASS
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+
+			go func() {
+				defer conn.Close()
+
+				buf := make([]byte, 4096)
+				for {
+					if _, err := conn.Read(buf); err != nil {
+						return
+					}
+
+					_, _ = conn.Write([]byte("-WRONGPASS invalid username-password pair or user is disabled.\r\n"))
+				}
+			}()
+		}
+	}()
+
+	m := &RedisKernel{redisConfig: &config.RedisConfig{
+		RedisHost: ln.Addr().String(), RedisPassword: "bad", DialTimeoutMs: 500, MaxRetries: -1, Optional: true,
+	}}
+
+	err = m.initRedisClient()
+	if err == nil || !strings.Contains(err.Error(), "WRONGPASS") {
+		t.Fatalf("REDIS_OPTIONAL must not hide an auth error, got %v", err)
+	}
+
+	_ = m.redisClient.Close()
+}

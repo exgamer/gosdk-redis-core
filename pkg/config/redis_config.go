@@ -25,6 +25,11 @@ type RedisConfig struct {
 	// вызова. По умолчанию выключено: go-redis ждёт ответа до ReadTimeout,
 	// даже если дедлайн контекста уже наступил.
 	ContextTimeoutEnabled bool `mapstructure:"REDIS_CONTEXT_TIMEOUT_ENABLED" json:"redis_context_timeout_enabled"`
+
+	// Optional — Redis необязателен: недоступный при старте Redis не останавливает приложение (WARN в лог),
+	// клиент создаётся и подключается сам, когда Redis поднимется. Только сетевые ошибки: неверный пароль или номер БД —
+	// ошибка Init и с ним. По умолчанию выключено: ошибка Init.
+	Optional bool `mapstructure:"REDIS_OPTIONAL" json:"redis_optional"`
 }
 
 // Masked возвращает копию конфига со скрытым паролем — для вывода в лог.

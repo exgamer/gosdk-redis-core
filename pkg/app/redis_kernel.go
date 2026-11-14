@@ -2,13 +2,18 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"net"
+	"syscall"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/exgamer/gosdk-core/pkg/app"
 	config2 "github.com/exgamer/gosdk-core/pkg/config"
 	"github.com/exgamer/gosdk-core/pkg/di"
+	"github.com/exgamer/gosdk-core/pkg/logger"
 	"github.com/exgamer/gosdk-redis-core/pkg/config"
 	"github.com/redis/go-redis/v9"
 )
@@ -61,6 +66,13 @@ func (m *RedisKernel) initRedisClient() error {
 	// Проверка подключения
 	pong, err := m.redisClient.Ping(context.Background()).Result()
 
+	if err != nil && m.redisConfig.Optional && isUnreachable(err) {
+		logger.Warning(context.Background(), "Redis недоступен при старте (REDIS_OPTIONAL=true, приложение продолжает работу; "+
+			"вызовы Redis вернут ошибку, пока он не поднимется): "+err.Error())
+
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
@@ -68,6 +80,15 @@ func (m *RedisKernel) initRedisClient() error {
 	fmt.Println("Соединение с Redis:", pong)
 
 	return nil
+}
+
+// isUnreachable Redis недоступен по сети: отказ в соединении, тайм-аут, DNS, обрыв. Ошибки ответа Redis
+// (WRONGPASS, NOAUTH, неверный номер БД) — ошибка конфигурации, их REDIS_OPTIONAL не прощает
+func isUnreachable(err error) bool {
+	var netErr net.Error
+
+	return errors.As(err, &netErr) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
+		errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.ECONNRESET)
 }
 
 // NewRedisOptions собирает redis.Options из конфига. Нулевые значения не
