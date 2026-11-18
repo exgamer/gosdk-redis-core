@@ -127,9 +127,9 @@ func milliseconds(v int) time.Duration {
 	return time.Duration(v) * time.Millisecond
 }
 
-// InitRedisConfig Инициализация конфига редиса
+// InitRedisConfig Инициализация конфига редиса: не заданная REDIS_CONTEXT_TIMEOUT_ENABLED — true
 func (m *RedisKernel) initRedisConfig() error {
-	redisConfig := &config.RedisConfig{}
+	redisConfig := &config.RedisConfig{ContextTimeoutEnabled: true} // по умолчанию дедлайн контекста прерывает вызов
 	err := config2.InitConfig(redisConfig)
 
 	if err != nil {

@@ -6,13 +6,14 @@ import (
 	"testing"
 	"time"
 
+	config2 "github.com/exgamer/gosdk-core/pkg/config"
 	"github.com/exgamer/gosdk-redis-core/pkg/config"
 	"github.com/redis/go-redis/v9"
 )
 
 func TestNewRedisOptions_ContextTimeoutEnabled(t *testing.T) {
 	if NewRedisOptions(&config.RedisConfig{}).ContextTimeoutEnabled {
-		t.Error("unset REDIS_CONTEXT_TIMEOUT_ENABLED must keep go-redis' default (false)")
+		t.Error("a hand-built RedisConfig{} must pass its zero value (false)")
 	}
 
 	if !NewRedisOptions(&config.RedisConfig{ContextTimeoutEnabled: true}).ContextTimeoutEnabled {
@@ -71,5 +72,32 @@ func TestContextTimeoutEnabled_DeadlineEndsTheCall(t *testing.T) {
 
 	if took := call(false); took < time.Second {
 		t.Errorf("disabled: call took %v, want go-redis to wait for the 2s read timeout (the default behavior)", took)
+	}
+}
+
+// The kernel turns ContextTimeoutEnabled on unless REDIS_CONTEXT_TIMEOUT_ENABLED is set.
+func TestInitRedisConfig_ContextTimeoutEnabledByDefault(t *testing.T) {
+	if _, err := config2.LoadEnv("testdata-no-such.env"); err != nil {
+		t.Fatal(err)
+	}
+
+	m := &RedisKernel{}
+	if err := m.initRedisConfig(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !m.redisConfig.ContextTimeoutEnabled {
+		t.Fatal("unset REDIS_CONTEXT_TIMEOUT_ENABLED must turn the option on")
+	}
+
+	t.Setenv("REDIS_CONTEXT_TIMEOUT_ENABLED", "false")
+
+	m = &RedisKernel{}
+	if err := m.initRedisConfig(); err != nil {
+		t.Fatal(err)
+	}
+
+	if m.redisConfig.ContextTimeoutEnabled {
+		t.Fatal("REDIS_CONTEXT_TIMEOUT_ENABLED=false must turn the option off")
 	}
 }

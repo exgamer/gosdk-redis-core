@@ -35,7 +35,7 @@ go get github.com/exgamer/gosdk-redis-core
 | `REDIS_READ_TIMEOUT_MS` | таймаут чтения ответа, мс. По умолчанию 3000 |
 | `REDIS_WRITE_TIMEOUT_MS` | таймаут записи, мс. По умолчанию равен таймауту чтения |
 | `REDIS_MAX_RETRIES` | число повторов при сетевой ошибке. По умолчанию 3, `-1` — без повторов |
-| `REDIS_CONTEXT_TIMEOUT_ENABLED` | `true` — вызов прерывается по дедлайну/отмене `context.Context`. По умолчанию `false`: go-redis ждёт ответа до `REDIS_READ_TIMEOUT_MS`, даже если дедлайн контекста уже наступил |
+| `REDIS_CONTEXT_TIMEOUT_ENABLED` | вызов прерывается по дедлайну/отмене `context.Context`. По умолчанию `true` (с v1.3.0); `false` — go-redis ждёт ответа до `REDIS_READ_TIMEOUT_MS`, даже если дедлайн контекста уже наступил |
 | `REDIS_OPTIONAL` | `true` — Redis необязателен: недоступный при старте Redis не останавливает приложение (WARN в лог), вызовы возвращают ошибку, пока он не поднимется; клиент подключается сам. Прощаются только сетевые ошибки (отказ в соединении, тайм-аут, DNS); неверный пароль или номер БД — ошибка старта. По умолчанию `false`: ошибка старта |
 
 Не заданные значения (или `0`) — значения go-redis по умолчанию.
@@ -49,9 +49,25 @@ REDIS_WRITE_TIMEOUT_MS=500
 REDIS_MAX_RETRIES=1
 ```
 
-Если сервис ограничивает вызовы своим `context.WithTimeout`, нужен ещё `REDIS_CONTEXT_TIMEOUT_ENABLED=true`, иначе дедлайн контекста не прерывает ожидание ответа.
+Дедлайн и отмена `context.Context` вызова прерывают ожидание ответа (с v1.3.0 по умолчанию; раньше нужен был
+`REDIS_CONTEXT_TIMEOUT_ENABLED=true`).
 
-При старте конфиг выводится в stdout, пароль скрывается.
+При старте конфиг выводится в stdout, пароль скрывается. `config.RedisConfig` при печати (`fmt` — `%v`, `%+v`, `%#v`,
+`%s`) и в JSON выводит пароль как `***`; настоящее значение — в поле `RedisPassword`.
+
+## Helper
+
+`redis.NewHelper[E](ctx, client)` — `GetStruct`/`SetStruct`, `GetString`/`SetString`, `GetArray`/`SetArray`,
+`MSetStruct`/`MGetStruct` (подробнее — [REDIS HELPER](pkg/redis/REDIS_HELPER_README.MD)).
+
+- У каждого метода есть вариант с контекстом вызова первым аргументом: `GetStructContext(ctx, key)`,
+  `SetArrayContext(ctx, key, models, ttl)` и т. д. — для хелпера, созданного раньше, чем известен контекст запроса.
+- `SetArray` с пустым срезом (и `nil`) пишет `[]`: пустой результат тоже кешируется; `GetArray` возвращает пустой
+  срез — попадание, `nil` — промах.
+- `Delete(keys...)`, `Exists(key)` (и `...Context`).
+- Блокировка с токеном владельца: `token, ok, err := h.TryLock(key, ttl)` (SET NX с ttl; `ok=false` — занята, ttl ≤ 0 —
+  `ErrLockTTL`), снятие — `h.Unlock(key, token)`: снимается только своя блокировка (истёкшую и взятую другим
+  владельцем — нет).
 
 ## Быстрый старт
 

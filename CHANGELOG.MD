@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.3.0
+
+Зависимости: `gosdk-core` v1.3.0.
+
+Маска пароля при печати конфига, дедлайн контекста по умолчанию, методы хелпера с контекстом, удаление, проверка
+ключа и блокировка с токеном владельца. Сигнатуры существующих методов не изменились, новых переменных окружения нет.
+
+### Изменения поведения
+- `REDIS_CONTEXT_TIMEOUT_ENABLED` по умолчанию `true`: не заданная переменная — дедлайн и отмена `context.Context`
+  прерывают вызов Redis (раньше go-redis ждал ответа до `REDIS_READ_TIMEOUT_MS`). Прежнее поведение —
+  `REDIS_CONTEXT_TIMEOUT_ENABLED=false`. Касается `RedisKernel`; в `RedisConfig{}`, собранном вручную, нулевое
+  значение — `false`, как раньше.
+- `SetArray` с пустым срезом или `nil` пишет `[]` (раньше ничего не писал и не трогал старое значение): пустой
+  результат кешируется, `GetArray` возвращает пустой срез.
+- `config.RedisConfig` при печати (`%v`, `%+v`, `%#v`, `%s`) и в JSON выводит пароль как `***`.
+
+### Добавлено
+- `String`, `GoString`, `MarshalJSON` у `config.RedisConfig` — маска пароля (как у `PostgresDbConfig` в postgres-core).
+- Варианты методов хелпера с контекстом вызова первым аргументом: `GetStructContext`, `SetStructContext`,
+  `GetStringContext`, `SetStringContext`, `GetArrayContext`, `SetArrayContext`, `MSetStructContext`,
+  `MGetStructContext`.
+- `Delete(keys...)`, `Exists(key)` и их `...Context`.
+- `TryLock(key, ttl)` / `Unlock(key, token)` (и `...Context`) — блокировка со случайным токеном владельца; снимается
+  только владельцем (скрипт сравнения и удаления), ttl ≤ 0 — `ErrLockTTL`.
+- Тесты хелпера на miniredis (зависимость только тестов).
+
 ## v1.2.0
 
 Необязательный Redis. По умолчанию поведение не изменилось.

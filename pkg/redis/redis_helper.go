@@ -26,12 +26,52 @@ type Helper[E any] struct {
 	context     context.Context
 }
 
-// GetStruct Возвращает значение по ключу
+// GetStruct Возвращает значение по ключу; контекст — из NewHelper (свой контекст вызова — GetStructContext)
 func (h *Helper[E]) GetStruct(key string) (*E, error) {
+	return h.GetStructContext(h.context, key)
+}
+
+// SetStruct Записывает значение по ключу; контекст — из NewHelper (свой контекст вызова — SetStructContext)
+func (h *Helper[E]) SetStruct(key string, model E, ttl time.Duration) error {
+	return h.SetStructContext(h.context, key, model, ttl)
+}
+
+// GetString Возвращает значение по ключу; контекст — из NewHelper (свой контекст вызова — GetStringContext)
+func (h *Helper[E]) GetString(key string) (string, error) {
+	return h.GetStringContext(h.context, key)
+}
+
+// SetString Записывает значение по ключу; контекст — из NewHelper (свой контекст вызова — SetStringContext)
+func (h *Helper[E]) SetString(key string, value string, ttl time.Duration) error {
+	return h.SetStringContext(h.context, key, value, ttl)
+}
+
+// GetArray Возвращает массив по ключу; контекст — из NewHelper (свой контекст вызова — GetArrayContext)
+func (h *Helper[E]) GetArray(key string) ([]E, error) {
+	return h.GetArrayContext(h.context, key)
+}
+
+// SetArray Записывает массив по ключу; контекст — из NewHelper (свой контекст вызова — SetArrayContext)
+func (h *Helper[E]) SetArray(key string, models []E, ttl time.Duration) error {
+	return h.SetArrayContext(h.context, key, models, ttl)
+}
+
+// MSetStruct сохраняет несколько структур в Redis; контекст — из NewHelper (свой контекст вызова — MSetStructContext)
+func (h *Helper[E]) MSetStruct(data map[string]E, exp time.Duration) error {
+	return h.MSetStructContext(h.context, data, exp)
+}
+
+// MGetStruct Возвращает несколько структур по ключам из Redis; контекст — из NewHelper (свой контекст вызова — MGetStructContext)
+func (h *Helper[E]) MGetStruct(keys []string) (map[string]E, error) {
+	return h.MGetStructContext(h.context, keys)
+}
+
+// GetStructContext GetStruct с контекстом вызова (дедлайн, отмена, отладка) вместо контекста NewHelper
+func (h *Helper[E]) GetStructContext(ctx context.Context, key string) (*E, error) {
 	start := time.Now()
-	val, err := h.redisClient.Get(h.context, key).Result()
+	val, err := h.redisClient.Get(ctx, key).Result()
 	execTime := time.Since(start)
-	h.setDebugInfo("GET", key, execTime)
+	h.setDebugInfo(ctx, "GET", key, execTime)
 
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -50,38 +90,38 @@ func (h *Helper[E]) GetStruct(key string) (*E, error) {
 		return nil, fmt.Errorf("failed to unmarshal model by key %s: %w", key, err)
 	}
 
-	logger.Debug(h.context, fmt.Sprintf("CACHE HIT key=%s", key))
+	logger.Debug(ctx, fmt.Sprintf("CACHE HIT key=%s", key))
 
 	return &result, nil
 }
 
-// SetStruct Записывает значение по ключу
-func (h *Helper[E]) SetStruct(key string, model E, ttl time.Duration) error {
+// SetStructContext SetStruct с контекстом вызова (дедлайн, отмена, отладка) вместо контекста NewHelper
+func (h *Helper[E]) SetStructContext(ctx context.Context, key string, model E, ttl time.Duration) error {
 	jsonModel, err := json.Marshal(model)
 	if err != nil {
 		return fmt.Errorf("failed to marshal model for key %s: %w", key, err)
 	}
 
 	start := time.Now()
-	err = h.redisClient.Set(h.context, key, jsonModel, ttl).Err()
+	err = h.redisClient.Set(ctx, key, jsonModel, ttl).Err()
 	execTime := time.Since(start)
-	h.setDebugInfo("SET", key, execTime)
+	h.setDebugInfo(ctx, "SET", key, execTime)
 
 	if err != nil {
 		return fmt.Errorf("failed to set model for key %s: %w", key, err)
 	}
 
-	logger.Debug(h.context, fmt.Sprintf("CACHE SET key=%s", key))
+	logger.Debug(ctx, fmt.Sprintf("CACHE SET key=%s", key))
 
 	return nil
 }
 
-// GetString Возвращает значение по ключу
-func (h *Helper[E]) GetString(key string) (string, error) {
+// GetStringContext GetString с контекстом вызова (дедлайн, отмена, отладка) вместо контекста NewHelper
+func (h *Helper[E]) GetStringContext(ctx context.Context, key string) (string, error) {
 	start := time.Now()
-	val, err := h.redisClient.Get(h.context, key).Result()
+	val, err := h.redisClient.Get(ctx, key).Result()
 	execTime := time.Since(start)
-	h.setDebugInfo("GET", key, execTime)
+	h.setDebugInfo(ctx, "GET", key, execTime)
 
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -95,33 +135,33 @@ func (h *Helper[E]) GetString(key string) (string, error) {
 		return "", nil
 	}
 
-	logger.Debug(h.context, fmt.Sprintf("CACHE HIT key=%s", key))
+	logger.Debug(ctx, fmt.Sprintf("CACHE HIT key=%s", key))
 
 	return val, nil
 }
 
-// SetString Записывает значение по ключу
-func (h *Helper[E]) SetString(key string, value string, ttl time.Duration) error {
+// SetStringContext SetString с контекстом вызова (дедлайн, отмена, отладка) вместо контекста NewHelper
+func (h *Helper[E]) SetStringContext(ctx context.Context, key string, value string, ttl time.Duration) error {
 	start := time.Now()
-	err := h.redisClient.Set(h.context, key, value, ttl).Err()
+	err := h.redisClient.Set(ctx, key, value, ttl).Err()
 	execTime := time.Since(start)
-	h.setDebugInfo("SET", key, execTime)
+	h.setDebugInfo(ctx, "SET", key, execTime)
 
 	if err != nil {
 		return fmt.Errorf("failed to set string for key %s: %w", key, err)
 	}
 
-	logger.Debug(h.context, fmt.Sprintf("CACHE SET key=%s", key))
+	logger.Debug(ctx, fmt.Sprintf("CACHE SET key=%s", key))
 
 	return nil
 }
 
-// GetArray Возвращает массив по ключу
-func (h *Helper[E]) GetArray(key string) ([]E, error) {
+// GetArrayContext GetArray с контекстом вызова (дедлайн, отмена, отладка) вместо контекста NewHelper
+func (h *Helper[E]) GetArrayContext(ctx context.Context, key string) ([]E, error) {
 	start := time.Now()
-	val, err := h.redisClient.Get(h.context, key).Result()
+	val, err := h.redisClient.Get(ctx, key).Result()
 	execTime := time.Since(start)
-	h.setDebugInfo("GET", key, execTime)
+	h.setDebugInfo(ctx, "GET", key, execTime)
 
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -140,15 +180,15 @@ func (h *Helper[E]) GetArray(key string) ([]E, error) {
 		return nil, fmt.Errorf("failed to unmarshal array by key %s: %w", key, err)
 	}
 
-	logger.Debug(h.context, fmt.Sprintf("CACHE HIT key=%s", key))
+	logger.Debug(ctx, fmt.Sprintf("CACHE HIT key=%s", key))
 
 	return resultArr, nil
 }
 
-// SetArray Записывает массив по ключу
-func (h *Helper[E]) SetArray(key string, models []E, ttl time.Duration) error {
-	if len(models) == 0 {
-		return nil
+// SetArrayContext SetArray с контекстом вызова (дедлайн, отмена, отладка) вместо контекста NewHelper
+func (h *Helper[E]) SetArrayContext(ctx context.Context, key string, models []E, ttl time.Duration) error {
+	if models == nil {
+		models = []E{} // пустой срез — «[]» (закешированный пустой результат), не «null»
 	}
 
 	payload, err := json.Marshal(models)
@@ -157,21 +197,21 @@ func (h *Helper[E]) SetArray(key string, models []E, ttl time.Duration) error {
 	}
 
 	start := time.Now()
-	err = h.redisClient.Set(h.context, key, payload, ttl).Err()
+	err = h.redisClient.Set(ctx, key, payload, ttl).Err()
 	execTime := time.Since(start)
-	h.setDebugInfo("SET", key, execTime)
+	h.setDebugInfo(ctx, "SET", key, execTime)
 
 	if err != nil {
 		return fmt.Errorf("failed to set array for key %s: %w", key, err)
 	}
 
-	logger.Debug(h.context, fmt.Sprintf("CACHE SET key=%s", key))
+	logger.Debug(ctx, fmt.Sprintf("CACHE SET key=%s", key))
 
 	return nil
 }
 
-// MSetStruct - сохраняет несколько структур в Redis
-func (h *Helper[E]) MSetStruct(data map[string]E, exp time.Duration) error {
+// MSetStructContext MSetStruct с контекстом вызова (дедлайн, отмена, отладка) вместо контекста NewHelper
+func (h *Helper[E]) MSetStructContext(ctx context.Context, data map[string]E, exp time.Duration) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -186,13 +226,13 @@ func (h *Helper[E]) MSetStruct(data map[string]E, exp time.Duration) error {
 		}
 
 		keys = append(keys, key)
-		pipe.Set(h.context, key, jsonModel, exp)
+		pipe.Set(ctx, key, jsonModel, exp)
 	}
 
 	start := time.Now()
-	_, err := pipe.Exec(h.context)
+	_, err := pipe.Exec(ctx)
 	execTime := time.Since(start)
-	h.setDebugInfo("MSET", keys, execTime)
+	h.setDebugInfo(ctx, "MSET", keys, execTime)
 
 	if err != nil {
 		return fmt.Errorf("failed to set multiple keys in Redis: %w", err)
@@ -201,14 +241,14 @@ func (h *Helper[E]) MSetStruct(data map[string]E, exp time.Duration) error {
 	return nil
 }
 
-// MGetStruct - Возвращает несколько структур по ключам из Redis
-func (h *Helper[E]) MGetStruct(keys []string) (map[string]E, error) {
+// MGetStructContext MGetStruct с контекстом вызова (дедлайн, отмена, отладка) вместо контекста NewHelper
+func (h *Helper[E]) MGetStructContext(ctx context.Context, keys []string) (map[string]E, error) {
 	if len(keys) == 0 {
 		return map[string]E{}, nil
 	}
 
 	start := time.Now()
-	values, err := h.redisClient.MGet(h.context, keys...).Result()
+	values, err := h.redisClient.MGet(ctx, keys...).Result()
 	execTime := time.Since(start)
 
 	if err != nil {
@@ -240,17 +280,17 @@ func (h *Helper[E]) MGetStruct(keys []string) (map[string]E, error) {
 		result[keys[i]] = model
 	}
 
-	h.setDebugInfo("MGET", keys, execTime)
+	h.setDebugInfo(ctx, "MGET", keys, execTime)
 
 	return result, nil
 }
 
-func (h *Helper[E]) setDebugInfo(operation string, keys interface{}, execTime time.Duration) {
-	if h.context == nil {
+func (h *Helper[E]) setDebugInfo(ctx context.Context, operation string, keys interface{}, execTime time.Duration) {
+	if ctx == nil {
 		return
 	}
 
-	d := debug.GetDebugFromContext(h.context)
+	d := debug.GetDebugFromContext(ctx)
 
 	if d == nil {
 
